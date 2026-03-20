@@ -5,11 +5,12 @@ author:
   - "José Eduardo Cruz Campos"
 date: "2026-03-19"
 format: 
-  html:
+  live-html:
     toc: true          # activa el índice
+    code-fold: true     # permite plegar el código    
     toc-depth: 3       # cuántos niveles de encabezado mostrar
     toc-location: left # ubica el índice a la izquierda
-    number-sections: true
+    number-sections: true 
 fontsize: 12pt  
 geometry: letterpaper
 linestretch: 1.2
@@ -42,16 +43,64 @@ Cada integrante del equipo deberá elegir una empresa distinta en la que le gust
   5. Interpretación y evaluación  
   Fuente: [Amazon](https://aws.amazon.com/es/what-is/data-mining/) 
 
+- **Mildred:** 
+
+- **Erick:**
+
 # Dataset a limpiar: personas desaparecidas en México
 
 Se trabajará con conjuntos de datos abiertos relacionados con personas desaparecidas en México.
 
 - **Número de filas:** 116945  
-- **Número de columnas:** 11  
-- **Periodo de fechas cubierto:** 1968-05-01 a 2023-08-20  
-- **Unidad de análisis:** cada fila representa un reporte de persona desaparecida  
-- **Visualización:**
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
+dataset = pd.read_csv("RNPDNO-22-08-2023.csv", encoding="latin-1")
+
+df = pd.DataFrame(dataset)
+num_files = df.shape[0] #obtenemos el numero de filas del csv 
+
+print(f"Numero de filas: {num_files}")
+```
+
+- **Número de columnas:** 11  
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+dataset = pd.read_csv("RNPDNO-22-08-2023.csv", encoding="latin-1")
+
+df = pd.DataFrame(dataset)
+num_columns = df.shape[1] #obtenemos el numero de columnas del csv
+
+print(f"Numero de columnas: {num_columns}")
+```
+
+- **Periodo de fechas cubierto:** Se cubrió desde el periodo del 01-05-1968 al 20-08-2023
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+dataset = pd.read_csv("RNPDNO-22-08-2023.csv", encoding="latin-1")
+
+df = pd.DataFrame(dataset)
+
+# eliminamos espacios en blanco de los nombres de las columnas
+df.columns = df.columns.str.strip() 
+#metemos a una lista las fechas de desaparicion para despues obtener la fecha minima y maxima.
+df["Fecha de desaparición"] = pd.to_datetime( df["Fecha de desaparición"], format="%d/%m/%Y", errors="coerce" )
+fecha_min = df["Fecha de desaparición"].min() 
+fecha_max = df["Fecha de desaparición"].max()
+
+print("Periodo:", fecha_min, "a", fecha_max)
+
+```
+
+- **Unidad de análisis:** En nuestro dataset, cada fila representa el reporte de una persona desaparecida, obteniendo datos como el ID del reporte (Consecutivo Reportes por Persona), Consecutivo registro (num de veces que se reportó), Nombre de la persona, Apellidos, Edad, Sexo, Nacionalidad, Fecha de desaparición, Entidad de desaparición, Autoridad que reportó.
 
 
 # Medidas descriptivas y análisis exploratorio de datos (EDA)
@@ -66,6 +115,7 @@ Crear una tabla que incluya, para cada columna:
 - Tipo estadístico:
   - Categórica nominal u ordinal
   - Numérica discreta o continua
+En nuestro dataset, cada fila representa el reporte de una persona desaparecida, obteniendo datos como el ID del reporte (Consecutivo Reportes por Persona), Consecutivo registro (num de veces que se reportó), Nombre de la persona, Apellidos, Edad, Sexo, Nacionalidad, Fecha de desaparición, Entidad de desaparición, Autoridad que reportó.
 
 ## 2. Aplicación de CRISP-DM al dataset asignado
 
