@@ -1,0 +1,99 @@
+---
+title: "Almacenes y Minería de Datos: Tarea 02"
+author: 
+  - "Zianya Nenetzi Trujillo Beltran" 
+  - "José Eduardo Cruz Campos"
+date: "2026-03-19"
+format: 
+  html:
+    toc: true          # activa el índice
+    toc-depth: 3       # cuántos niveles de encabezado mostrar
+    toc-location: left # ubica el índice a la izquierda
+    number-sections: true
+fontsize: 12pt  
+geometry: letterpaper
+linestretch: 1.2
+lang: es
+jupyter: python3  
+execute: 
+    echo: true
+    warning: false
+    error: false  
+---
+
+# Empresa y metodología de Minería de Datos
+
+Cada integrante del equipo deberá elegir una empresa distinta en la que le gustaría trabajar e investigar qué metodología utiliza para desarrollar proyectos de Minería de Datos.
+
+- **Zianya:** BBVA aplica CRISP-DM siguiendo 6 pasos:
+  1. Comprensión del negocio y definición del objetivo
+  2. Comprensión de los datos
+  3. Análisis y preparación de los datos
+  4. Modelado
+  5. Obtención de resultados
+  6. Despliegue  
+  Fuente: [BBVA](https://www.bbva.com/es/empresas/como-puede-ayudar-el-data-mining-a-las-empresas/)
+
+- **José Eduardo:** Amazon utiliza KDD (Knowledge Discovery in Databases) que consta de 5 etapas:
+  1. Selección de datos relevantes
+  2. Preprocesamiento de datos
+  3. Transformación de datos
+  4. Minería de datos
+  5. Interpretación y evaluación  
+  Fuente: [Amazon](https://aws.amazon.com/es/what-is/data-mining/) 
+
+# Dataset a limpiar: personas desaparecidas en México
+
+Se trabajará con conjuntos de datos abiertos relacionados con personas desaparecidas en México.
+
+- **Número de filas:** 116945  
+- **Número de columnas:** 11  
+- **Periodo de fechas cubierto:** 1968-05-01 a 2023-08-20  
+- **Unidad de análisis:** cada fila representa un reporte de persona desaparecida  
+- **Visualización:**
+
+
+
+# Medidas descriptivas y análisis exploratorio de datos (EDA)
+
+## 1. Diccionario de datos
+
+Crear una tabla que incluya, para cada columna:
+
+- Nombre de la columna
+- Descripción
+- Tipo de dato (string, entero, float, fecha/hora, booleano)
+- Tipo estadístico:
+  - Categórica nominal u ordinal
+  - Numérica discreta o continua
+
+## 2. Aplicación de CRISP-DM al dataset asignado
+
+- **Business Understanding:** definir el objetivo, preguntas de análisis y criterios de éxito
+- **Data Understanding:** exploración inicial, calidad de datos, hipótesis preliminares
+- **Data Preparation:** limpieza, transformación, selección de variables, variables derivadas
+- **Modelling:** técnicas de minería de datos adecuadas
+- **Evaluation:** validación de hallazgos, sesgos, limitaciones
+- **Deployment:** entrega final, por ejemplo mediante un reporte
+
+## 3. Cálculo de medidas con visualizaciones e interpretación
+
+- Medidas de localización  
+- Medidas de variabilidad  
+- Medidas de heterogeneidad  
+- Medidas de concentración  
+
+# Correlación
+
+- Generar la matriz de correlación (heatmap)  
+- Indicar correlaciones más fuertes y más débiles  
+
+# Limpieza del dataset y generación del CSV limpio
+
+- Valores faltantes: columnas, porcentaje, decisión tomada  
+- Duplicados: criterio de detección y acción  
+- Tipos de datos correctos: fechas, numéricos, categorías  
+- Normalización de categorías: mayúsculas/minúsculas, etiquetas equivalentes  
+- Validaciones: rangos, fechas, coordenadas, inconsistencias  
+
+**Entregable adicional:** archivo CSV con dataset limpio
