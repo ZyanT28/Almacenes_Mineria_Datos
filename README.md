@@ -31,3 +31,4 @@ Para verificar que quarto esta bien instalado se utiliza el comando:
     $ quarto check
 
 **IMPORTANTE: verificar que estas utilizando el entorno virtual del proyecto y no otro que no tenga instaladas las dependencias, o que no tengas activada CONDA de python**
+
