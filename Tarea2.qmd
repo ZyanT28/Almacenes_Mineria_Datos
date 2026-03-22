@@ -115,7 +115,8 @@ Crear una tabla que incluya, para cada columna:
 - Tipo estadístico:
   - Categórica nominal u ordinal
   - Numérica discreta o continua
-En nuestro dataset, cada fila representa el reporte de una persona desaparecida, obteniendo datos como el ID del reporte (Consecutivo Reportes por Persona), Consecutivo registro (num de veces que se reportó), Nombre de la persona, Apellidos, Edad, Sexo, Nacionalidad, Fecha de desaparición, Entidad de desaparición, Autoridad que reportó.
+
+![](images/T02_EDA.png)
 
 ## 2. Aplicación de CRISP-DM al dataset asignado
 
