@@ -187,6 +187,17 @@ A partir del escenario anterior, como equipo analítico se realiza una exploraci
 Se llevan a cabo procesos de limpieza, transformación de datos, tratamiento de valores nulos y generación de variables derivadas.
 
 
+<!-- # Limpieza del dataset y generación del CSV limpio
+Realizar la limpieza del dataset y documentar claramente lo siguiente:
+
+- Valores faltantes:  qué columnas los presentan, qué porcentaje representan, qué decisión se tomó y por qué.  
+- Duplicados: criterio utilizado para detectarlos y acción tomada.  
+- Tipos de datos correctos: conversión y validación de fechas, valores numéricos y categorías.
+- Normalización de categorías: por ejemplo, corrección de mayúsculas/minúsculas y
+homologación de etiquetas equivalentes.
+- Validaciones: revisión de rangos razonables, fechas imposibles, coordenadas geográficas, en caso de que existan, u otras inconsistencias relevantes. -->
+
+
 
 
 ### Modelling
@@ -226,16 +237,6 @@ interpretación breve, formal y contextualizada en el caso del dataset de person
 - Indicar correlaciones más fuertes y más débiles  
 
 --- 
-
-# Limpieza del dataset y generación del CSV limpio
-Realizar la limpieza del dataset y documentar claramente lo siguiente:
-
-- Valores faltantes:  qué columnas los presentan, qué porcentaje representan, qué decisión se tomó y por qué.  
-- Duplicados: criterio utilizado para detectarlos y acción tomada.  
-- Tipos de datos correctos: conversión y validación de fechas, valores numéricos y categorías.
-- Normalización de categorías: por ejemplo, corrección de mayúsculas/minúsculas y
-homologación de etiquetas equivalentes.
-- Validaciones: revisión de rangos razonables, fechas imposibles, coordenadas geográficas, en caso de que existan, u otras inconsistencias relevantes.
 
 **Entregable adicional:** generar el archivo CSV con el dataset limpio.
 
