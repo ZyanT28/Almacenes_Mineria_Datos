@@ -5,12 +5,13 @@ author:
   - "José Eduardo Cruz Campos"
 date: "2026-03-19"
 format: 
-  live-html:
+  html:    
     toc: true          # activa el índice
     code-fold: true     # permite plegar el código    
-    toc-depth: 3       # cuántos niveles de encabezado mostrar
+    toc-depth: 2       # cuántos niveles de encabezado mostrar
     toc-location: left # ubica el índice a la izquierda
-    number-sections: true 
+    number-sections: false
+    css: styles.css
 fontsize: 12pt  
 geometry: letterpaper
 linestretch: 1.2
@@ -48,7 +49,6 @@ Cada integrante del equipo deberá elegir una empresa distinta en la que le gust
 - **Erick:**
 
 # Dataset a limpiar: personas desaparecidas en México
-
 Se trabajará con conjuntos de datos abiertos relacionados con personas desaparecidas en México.
 
 - **Número de filas:** 116945  
@@ -102,13 +102,12 @@ print("Periodo:", fecha_min, "a", fecha_max)
 
 - **Unidad de análisis:** En nuestro dataset, cada fila representa el reporte de una persona desaparecida, obteniendo datos como el ID del reporte (Consecutivo Reportes por Persona), Consecutivo registro (num de veces que se reportó), Nombre de la persona, Apellidos, Edad, Sexo, Nacionalidad, Fecha de desaparición, Entidad de desaparición, Autoridad que reportó.
 
+---
 
 # Medidas descriptivas y análisis exploratorio de datos (EDA)
 
-## 1. Diccionario de datos
-
+## Diccionario de datos
 Crear una tabla que incluya, para cada columna:
-
 - Nombre de la columna
 - Descripción
 - Tipo de dato (string, entero, float, fecha/hora, booleano)
@@ -116,35 +115,144 @@ Crear una tabla que incluya, para cada columna:
   - Categórica nominal u ordinal
   - Numérica discreta o continua
 
-![](images/T02_EDA.png)
+![](images/tabla_de_columnas.png)
 
-## 2. Aplicación de CRISP-DM al dataset asignado
+## Aplicación de CRISP-DM al dataset asignado
 
-- **Business Understanding:** definir el objetivo, preguntas de análisis y criterios de éxito
-- **Data Understanding:** exploración inicial, calidad de datos, hipótesis preliminares
-- **Data Preparation:** limpieza, transformación, selección de variables, variables derivadas
-- **Modelling:** técnicas de minería de datos adecuadas
-- **Evaluation:** validación de hallazgos, sesgos, limitaciones
-- **Deployment:** entrega final, por ejemplo mediante un reporte
+### Business Understanding
 
-## 3. Cálculo de medidas con visualizaciones e interpretación
+####  Contexto / Escenario
+México atraviesa una grave crisis de inseguridad con más de 110,965 casos registrados de personas desaparecidas y no localizadas, principalmente vinculadas a problemáticas estructurales como la violencia, el crimen organizado y la impunidad. Este fenómeno presenta características sistemáticas y afecta de manera diferenciada a diversos grupos de la población.
+El presente análisis se sitúa en un contexto social y analítico, utilizando datos abiertos sobre personas desaparecidas en México. El dataset proporciona información relevante sobre características demográficas (edad, sexo, nacionalidad), así como variables temporales y geográficas (fecha y entidad de desaparición) y las autoridades responsables del reporte.
+El objetivo de este análisis es identificar estadísticas, tendencias y grupos vulnerables a lo largo del tiempo.
+
+#### Situación problemática
+Las desapariciones ocurren frecuentemente con la intervención directa e indirecta de agentes gubernamentales. Estos actores estatales podrían corresponder a una parte de una red de macro-criminalidad en donde se promueven los fines del crimen organizado. El contexto de impunidad en México ha contribuido a la crisis de desapariciones. La falta de información sobre desapariciones es usada para justificar la falta de rendición de cuentas y justicia. Al mirar estos casos más de cerca, se demuestra que oficiales gubernamentales no investigan las desapariciones de una manera oportuna y efectiva como la ley lo requiere. Esto se puede deber a la dificultad de tal investigación o al miedo a llevarla a cabo en un contexto de crímenes violentos. De forma alternativa, la falta de búsqueda o investigación ha sido usada para encubrir el involucramiento de los mismos agentes estatales. 
+La falta de investigación efectiva y la ausencia de justicia perpetúan el ciclo de violencia y desapariciones, dejando a las víctimas y sus familias sin respuestas ni reparación.
+
+Fuente: [Desapariciones en México - University of Minnesota](https://cla.umn.edu/human-rights/desapariciones-en-mexico) 
+
+#### Objetivo de análisis
+El objetivo de este análisis es entender cómo se comporta el fenómeno de desapariciones en México.
+
+#### Necesidades de información 
+En consecuencia, el problema inicial se puede formular así:
+
+- ¿En qué entidades del país ocurren más desapariciones?
+
+- ¿Existen patrones regionales o zonas de mayor riesgo?
+
+- ¿Qué grupos de edad son más vulnerables?
+
+- ¿Hay diferencias por sexo o nacionalidad?
+
+- ¿Qué autoridades reportan más casos?
+
+- ¿Cómo han evolucionado las desapariciones a lo largo del tiempo?
+
+
+###  Data Understanding
+
+A partir del escenario anterior, como equipo analítico se realiza una exploración inicial del dataset, evaluando la calidad de los datos, valores faltantes e inconsistencias, formulando preguntas como las siguientes:
+
+#### Sobre estructura general del dataset
+- ¿Cuántas filas y columnas tiene el dataset?
+
+- ¿Cuantas variables numéricas y categóricas hay?
+
+- ¿Existen registros duplicados, datos elimindados o filas incompletas?
+
+- ¿Hay inconsistencias en los nombres de entidades o instituciones?
+
+#### Sobre variables de entidades de desaparición
+- ¿Cuáles son las entidades con más desapariciones?
+
+- ¿Cómo se distribuyen las desapariciones a lo largo del tiempo?
+
+#### Sobre variables de las instituciones que reportan desapariciones
+- ¿Qué autoridades reportan la mayor cantidad de desapariciones?
+
+- ¿Existen instituciones con mayor registros inconsistentes o muy pocos reportes?
+
+#### Sobre variables características de las personas desaparecidas
+- ¿Qué grupos de edad son más vulnerables a las desapariciones?
+- ¿Qué grupos de sexo y nacionalidad presentan más casos de desaparición?
+
+#### Sobre la calidad de los datos
+- ¿Qué porcentaje de datos faltantes hay en cada columna?
+
+
+### Data Preparation
+
+Se llevan a cabo procesos de limpieza, transformación de datos, tratamiento de valores nulos y generación de variables derivadas.
+
+
+
+
+### Modelling
+
+Se proponen técnicas como clustering, análisis de series de tiempo y reglas de asociación para el análisis del fenómeno.
+
+
+
+### Evaluation
+
+Se analizan los resultados considerando posibles sesgos, calidad de los datos y utilidad de los hallazgos.
+
+
+
+### Deployment
+
+Los resultados se presentan mediante un reporte estructurado con visualizaciones que faciliten la interpretación.
+
+
+
+---
+
+# Cálculo de medidas con visualizaciones e interpretación
+Calcular las medidas vistas en clase, acompañarlas con su respectiva gráfica e incluir una
+interpretación breve, formal y contextualizada en el caso del dataset de personas desaparecidas asignado al equipo.
 
 - Medidas de localización  
 - Medidas de variabilidad  
 - Medidas de heterogeneidad  
 - Medidas de concentración  
 
+---
+
 # Correlación
 
 - Generar la matriz de correlación (heatmap)  
 - Indicar correlaciones más fuertes y más débiles  
 
+--- 
+
 # Limpieza del dataset y generación del CSV limpio
+Realizar la limpieza del dataset y documentar claramente lo siguiente:
 
-- Valores faltantes: columnas, porcentaje, decisión tomada  
-- Duplicados: criterio de detección y acción  
-- Tipos de datos correctos: fechas, numéricos, categorías  
-- Normalización de categorías: mayúsculas/minúsculas, etiquetas equivalentes  
-- Validaciones: rangos, fechas, coordenadas, inconsistencias  
+- Valores faltantes:  qué columnas los presentan, qué porcentaje representan, qué decisión se tomó y por qué.  
+- Duplicados: criterio utilizado para detectarlos y acción tomada.  
+- Tipos de datos correctos: conversión y validación de fechas, valores numéricos y categorías.
+- Normalización de categorías: por ejemplo, corrección de mayúsculas/minúsculas y
+homologación de etiquetas equivalentes.
+- Validaciones: revisión de rangos razonables, fechas imposibles, coordenadas geográficas, en caso de que existan, u otras inconsistencias relevantes.
 
-**Entregable adicional:** archivo CSV con dataset limpio
+**Entregable adicional:** generar el archivo CSV con el dataset limpio.
+
+--- 
+
+# Git 
+- Crear un notebook reproducible y subirlo a Git.
+- Crear un environment para la instalación de bibliotecas.
+- Incluir instrucciones de ejecución: las dependencias necesarias y los pasos para ejecutar el proyecto.
+
+--- 
+
+# Reporte final: hallazgos y limitaciones
+Entregar un reporte en PDF que incluya:
+- Objetivo y preguntas de análisis
+- Descripción del dataset asignado al equipo
+- Al menos 8 hallazgos principales sustentados con evidencia gráfica o tablas
+- Limitaciones del análisis: calidad de los datos, sesgos, variables faltantes y decisiones
+de limpieza
+- Conclusión.
