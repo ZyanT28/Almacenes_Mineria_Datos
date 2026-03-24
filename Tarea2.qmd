@@ -139,15 +139,10 @@ El objetivo de este análisis es entender cómo se comporta el fenómeno de desa
 En consecuencia, el problema inicial se puede formular así:
 
 - ¿En qué entidades del país ocurren más desapariciones?
-
 - ¿Existen patrones regionales o zonas de mayor riesgo?
-
 - ¿Qué grupos de edad son más vulnerables?
-
 - ¿Hay diferencias por sexo o nacionalidad?
-
 - ¿Qué autoridades reportan más casos?
-
 - ¿Cómo han evolucionado las desapariciones a lo largo del tiempo?
 
 
@@ -156,22 +151,22 @@ En consecuencia, el problema inicial se puede formular así:
 A partir del escenario anterior, como equipo analítico se realiza una exploración inicial del dataset, evaluando la calidad de los datos, valores faltantes e inconsistencias, formulando preguntas como las siguientes:
 
 #### Sobre estructura general del dataset
-- ¿Cuántas filas y columnas tiene el dataset?
 
-- ¿Cuantas variables numéricas y categóricas hay?
+- ¿Cuántas filas y columnas tiene el dataset?   
+  (anteriormente vimos que tiene 116945 filas y 11 columnas)
 
-- ¿Existen registros duplicados, datos elimindados o filas incompletas?
+- ¿Cuantas variables numéricas y categóricas hay?   
+  (notamos 3 variables numéricas: edad, consecutivo reportes por persona, consecutivo registro; y 8 variables categóricas: nombre, apellido paterno, apellido materno, sexo, nacionalidad, fecha de desaparición, entidad de desaparición, autoridad que reporta)
 
+- ¿Existen registros duplicados, datos eliminados o filas incompletas?
 - ¿Hay inconsistencias en los nombres de entidades o instituciones?
 
 #### Sobre variables de entidades de desaparición
 - ¿Cuáles son las entidades con más desapariciones?
-
 - ¿Cómo se distribuyen las desapariciones a lo largo del tiempo?
 
 #### Sobre variables de las instituciones que reportan desapariciones
 - ¿Qué autoridades reportan la mayor cantidad de desapariciones?
-
 - ¿Existen instituciones con mayor registros inconsistentes o muy pocos reportes?
 
 #### Sobre variables características de las personas desaparecidas
@@ -183,8 +178,87 @@ A partir del escenario anterior, como equipo analítico se realiza una exploraci
 
 
 ### Data Preparation
+<!-- Se llevan a cabo procesos de limpieza, transformación de datos, tratamiento de valores nulos y generación de variables derivadas.
+ -->
+Antes de emplear cualquier técnica de limpieza, necesitamos analizar los datos eliminados, duplicados y vacíos, para contestar las siguientes preguntas:
 
-Se llevan a cabo procesos de limpieza, transformación de datos, tratamiento de valores nulos y generación de variables derivadas.
+- **¿Cuál es el porcentaje de faltantes de cada columna?**
+```{python}
+import numpy as np
+import pandas as pd
+
+dataset = pd.read_csv("RNPDNO-22-08-2023.csv", encoding="latin-1")
+df = pd.DataFrame(dataset)
+
+#limpiamos el dataset, convirtiendo a NaN en un csv copia
+faltantes = [ "", " ", "NA", "N/A", "SE DESCONOCE", "ELIMINADO 1", "ELIMINADO 2", "ELIMINADO 3", "ELIMINADO 4", "ELIMINADO 5", "ELIMINADO 6", "ELIMINADO 7", "ELIMINADO 8", "ELIMINADO 9", "ELIMINADO 10" , "ELIMINADO 11"]
+df_limpio = df.replace(faltantes, np.nan)
+df_limpio = df_limpio.replace(r"ELIMINADO.*", np.nan, regex=True)
+df_limpio.to_csv("dataset_limpio.csv", index=False) 
+
+
+# Obtenemos el porcentaje de valores faltantes por columna
+faltantes_abs = df_limpio.isna().sum() #convertimos valores a T/F, y sumamos por columna para obtener el numero de faltantes
+porcentaje_col = (df_limpio.isna().sum() / len(df_limpio)) * 100 #porcentaje de faltantes por columna
+num_faltantes_col = df_limpio.isna().sum() #numero de faltantes por columna
+resumen = pd.DataFrame({
+    "Número de faltantes": num_faltantes_col,
+    "Porcentaje ": porcentaje_col.round(0).astype(int).astype(str) + " %"
+})
+print(resumen.to_string())
+```
+
+- **¿Cuál es el porcentaje de valores faltantes en general?**
+```{python}
+import numpy as np
+import pandas as pd
+
+dataset = pd.read_csv("RNPDNO-22-08-2023.csv", encoding="latin-1")
+df = pd.DataFrame(dataset)
+
+#limpiamos el dataset, convirtiendo a NaN en un csv copia
+faltantes = [ "", " ", "NA", "N/A", "SE DESCONOCE", "ELIMINADO 1", "ELIMINADO 2", "ELIMINADO 3", "ELIMINADO 4", "ELIMINADO 5", "ELIMINADO 6", "ELIMINADO 7", "ELIMINADO 8", "ELIMINADO 9", "ELIMINADO 10" , "ELIMINADO 11"]
+df_limpio = df.replace(faltantes, np.nan)
+df_limpio = df_limpio.replace(r"ELIMINADO.*", np.nan, regex=True)
+df_limpio.to_csv("dataset_limpio.csv", index=False) 
+
+# Obtenemos el porcentaje total de valores faltantes en el dataset
+total_celdas = df_limpio.shape[0] * df_limpio.shape[1]
+total_faltantes = df_limpio.isna().sum().sum() #sumamos el total de datos faltantes en todo el dataset
+porcentaje_total = (total_faltantes / total_celdas) * 100 # sacamos el porcentaje
+print("")
+print(f"Número total de datos faltantes: {total_faltantes}")
+print(f"Porcentaje total de datos faltantes: {round(porcentaje_total)} %")
+
+```
+
+- **¿Cuál es el patrón de ausencia?**
+
+Se identifican distintos patrones de ausencia en el dataset. La variable fecha de desaparición tiene el mayor porcentaje de valores faltantes (80%), lo que sugiere un patrón no aleatorio asociado a fallas en el registro. También existen casos con múltiples datos faltantes simultáneamente, especialmente en registros con varias columnas con el valor “ELIMINADO”, indicando ausencia agrupada por fila. Por otra parte variables como edad, sexo y nacionalidad muestran un porcentaje faltante entre 30% y 40% de forma más dispersa, lo que puede apuntar a problemas de captura o diferencias entre fuentes. En conjunto, los datos faltantes responden a factores estructurales y no son completamente aleatorios.
+
+- **¿Cuál sería el mecanismo de ausencia más probable?**
+
+En el caso de la variable Fecha de desaparición su porcentaje de valores faltantes (80%) indica un mecanismo de tipo MAR (Missing At Random), ya que su ausencia probablemente depende de factores como la institución que reporta, la entidad o el periodo de registro.
+
+Por otro lado, los registros que contienen valores como “ELIMINADO” evidencian un mecanismo de tipo MNAR (Missing Not At Random), dado que la ausencia de información puede deberse a procesos intencionales de anonimización o censura.
+
+Finalmente, variables como edad, sexo y nacionalidad presentan un comportamiento consistente con un mecanismo predominantemente MAR, posiblemente asociado a inconsistencias en la captura de datos o diferencias en la calidad de las fuentes. 
+
+::: {.nota}
+**Nota:** La identificación del mecanismo de ausencia es crucial para determinar las estrategias de limpieza y análisis, ya que cada tipo de mecanismo requiere enfoques diferentes para manejar los datos faltantes sin introducir sesgos significativos.
+
+- MCAR: faltan datos al azar
+- MAR: faltan datos dependiendo de otra variable
+- MNAR: faltan datos porque justo ese dato es problemático
+:::
+
+- **¿Qué decisión se tomó respecto a los valores faltantes y por qué?**
+
+
+- **¿Cómo podemos encontrar registros duplicados?** 
+- **¿Qué acciones se tomaron respecto a los registros duplicados y por qué?**
+- **¿Cómo podemos convertir y validar los datos de las fechas a valores numéricos?** 
+- **¿Cómo corregimos las mayúsculas/minúsculas y homologamos etiquetas equivalentes en las categorías?**
 
 
 <!-- # Limpieza del dataset y generación del CSV limpio
