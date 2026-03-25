@@ -260,10 +260,58 @@ Finalmente, variables como edad, sexo y nacionalidad presentan un comportamiento
 - MNAR: faltan datos porque justo ese dato es problemático
 :::
 
-- **¿Qué decisión se tomó respecto a los valores faltantes y por qué?**
+- **¿Qué decisión se puede tomar respecto a los valores faltantes y por qué?**
 
+No podemos eliminar observaciones incompletas puesto que la mayoría el 80 % de la columna de Fecha de desaparición está incompleta, por lo que perderíamos el 80% de la información total. 
+La imputación simple mediante media, mediana o moda no resulta adecuada para la variable Fecha de desaparición puesto que generaría falsas concentraciones de datos en determinados periodos de tiempo, distorsionando las tendencias reales y comprometiendo la validez del análisis. Por lo que se opta por mantener los valores faltantes remplazándolos como NaN para mantener la integridad de los datos disponibles y evitar sesgos a través de imputaciones incorrectas. Y eliminamos las filas que tienen valores como "ELIMINADO" en todas sus columnas, ya que estas filas no aportan información útil para el análisis y su presencia podría generar ruido o confusión en los resultados.
+Finalmente, el poco porcentaje de registros con fecha disponible se pueden utilizar para el análisis temporal, permitiendo estudiar tendencias y evolución en el tiempo además de el análisis demográfico, geográfico e institucional que se puede realizar con la mayoría del dataset, maximizando el aprovechamiento de la información disponible.
 
 - **¿Cómo podemos encontrar registros duplicados?** 
+
+Cada persona tiene un único ID 
+
+```{python}
+import pandas as pd
+import numpy as np
+
+# 1. Cargar dataset original
+dataset = pd.read_csv("RNPDNO-22-08-2023.csv", encoding="latin-1")
+
+# 2. Reemplazar vacíos por NaN
+dataset = dataset.replace(r'^\s*$', np.nan, regex=True)
+
+# 3. Reemplazar "ELIMINADO" por NaN
+dataset = dataset.replace(to_replace="ELIMINADO.*", value=np.nan, regex=True)
+
+# 4. Eliminar filas completamente vacías
+dataset = dataset.dropna(how="all")
+
+dataset["Consecutivo Reportes por Persona"] = dataset["Consecutivo Reportes por Persona"].astype("Int64")
+
+# 5. Buscar duplicados (opcional visualizar)
+duplicados = dataset[dataset.duplicated(
+    subset=[
+        "Nombre", "Primer Apellido", "Segundo Apellido", "Fecha de desaparición"
+    ],
+    keep=False
+)]
+
+print("Duplicados encontrados:", len(duplicados))
+
+# 6. Eliminar duplicados
+dataset = dataset.drop_duplicates(
+    subset=[
+        "Nombre", "Primer Apellido", "Segundo Apellido", "Fecha de desaparición"
+    ]
+)
+
+# 7. Guardar dataset limpio en otro archivo
+dataset.to_csv("dataset_limpio.csv", index=False)
+
+
+
+```
+
 - **¿Qué acciones se tomaron respecto a los registros duplicados y por qué?**
 - **¿Cómo podemos convertir y validar los datos de las fechas a valores numéricos?** 
 - **¿Cómo corregimos las mayúsculas/minúsculas y homologamos etiquetas equivalentes en las categorías?**
