@@ -122,7 +122,8 @@ Crear una tabla que incluya, para cada columna:
   - Categórica nominal u ordinal
   - Numérica discreta o continua
 
-![](images/tabla_de_columnas.png)
+<!--![](images/tabla_de_columnas.png)-->
+![Tabla de columnas](images/tabla_de_columnas.png){#fig-tabla-columnas}
 
 ## Aplicación de CRISP-DM al dataset asignado
 
@@ -302,8 +303,33 @@ Los resultados se presentan mediante un reporte estructurado con visualizaciones
 ---
 
 # Cálculo de medidas con visualizaciones e interpretación
-Calcular las medidas vistas en clase, acompañarlas con su respectiva gráfica e incluir una
-interpretación breve, formal y contextualizada en el caso del dataset de personas desaparecidas asignado al equipo.
+<!--Calcular las medidas vistas en clase, acompañarlas con su respectiva gráfica e incluir una
+interpretación breve, formal y contextualizada en el caso del dataset de personas desaparecidas asignado al equipo.-->
+
+Antes de realizar el análisis estadístico, consultar la @fig-tabla-columnas. Se clasificaron las variables del dataset en cuantitativas y cualitativas con el fin de determinar las medidas y visualizaciones adecuadas.
+
+- **Cualitativas** 
+  - *Nominales:* sexo, nacionalidad, entidad, autoridad que reportó
+  - *Ordinales:* no tenemos.
+
+- **Cuantitativas**
+  - *Discretas:* consecutivo registro, edad
+  - *Continuas:* no tenemos 
+
+::: {.nota}
+**Nota:** La variable fecha de desaparición se clasifica como una variable temporal, ya que representa un punto específico en el tiempo y no una cantidad medible.
+
+Sin embargo, esta variable puede transformarse en nuevas variables derivadas, como año y mes, las cuales permiten realizar análisis cuantitativos y categóricos. Por ejemplo, el mes puede utilizarse como variable categórica ordinal para identificar patrones estacionales en las desapariciones.
+:::
+
+::: {.nota}
+**Nota:** Las variables nombre, primer apellido, segundo apellido y consecutivo de reportes por persona (ID) fueron clasificadas como variables identificadoras.
+
+Estas variables no fueron consideradas en el análisis estadístico, ya que su función es únicamente distinguir registros individuales.
+
+Asimismo, no son susceptibles de análisis mediante medidas estadísticas ni aportan valor en la generación de visualizaciones, debido a que no permiten identificar patrones, tendencias o relaciones significativas dentro del dataset.
+:::
+
 
 - Medidas de localización  
 - Medidas de variabilidad  
