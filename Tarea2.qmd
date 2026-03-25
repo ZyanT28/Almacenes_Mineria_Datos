@@ -4,6 +4,7 @@ author:
   - "Zianya Nenetzi Trujillo Beltran" 
   - "José Eduardo Cruz Campos"
   - "Paola Mildred Martínez Hidalgo"
+  - "Eric Toporek Coca"
 date: "2026-03-19"
 format: 
   html:    
@@ -53,7 +54,15 @@ Cada integrante del equipo deberá elegir una empresa distinta en la que le gust
   5. Aceptación  
   Fuente: [Microsoft](https://learn.microsoft.com/en-us/analysis-services/data-mining/data-mining-ssas?view=asallproducts-allversions)
 
-- **Erick:**
+- **Eric:** Capital One, un banco estadounidense, diseña la metodología en función de que esté fuertemente cargada en automatización tanto en procesos de minería de datos como en procesos de machine learning, así como en la gestión de datos, en función de tener modelos que analizan tendencias de mercado y detección de fraudes o riesgos. Cada equipo es propietario de los recursos que utiliza, por lo que se encarga de su gestión y mantenimiento. Los datos siguen el siguiente ciclo de vida:
+  1. Registro de Datos en un repositorio centralizado
+  2. Clasificación de datos
+  3. Ingesta
+  4. Modelado
+  5. Seguridad y Tokenización
+  6. Personalización conforme a cliente
+  7. Despliegue
+  Fuente: [Capital One](https://www.capitalone.com/tech/cloud/data-management-at-scale/)
 
 # Dataset a limpiar: personas desaparecidas en México
 Se trabajará con conjuntos de datos abiertos relacionados con personas desaparecidas en México.
@@ -283,19 +292,186 @@ homologación de etiquetas equivalentes.
 
 ### Modelling
 
-Se proponen técnicas como clustering, análisis de series de tiempo y reglas de asociación para el análisis del fenómeno.
+Se proponen técnicas como clustering y análisis de series de tiempo para el análisis del fenómeno. A continuación, se muestra una implementación inicial de ambos modelos para identificar patrones en la edad y volumen de desapariciones.
 
+#### 1. Análisis de Series de Tiempo
+Este modelo busca identificar la tendencia temporal del volumen de personas desaparecidas a lo largo de los meses.
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Asumiendo que df_limpio es nuestro dataframe después del Data Preparation
+# Agrupamos por año y mes usando la fecha de desaparición
+if "Fecha de desaparición" in df_limpio.columns:
+    df_limpio["Fecha de desaparición"] = pd.to_datetime(df_limpio["Fecha de desaparición"], errors="coerce")
+    
+    df_ts = df_limpio.dropna(subset=["Fecha de desaparición"]).copy()
+    
+    serie_tiempo = df_ts.groupby(df_ts["Fecha de desaparición"].dt.to_period("M")).size().reset_index(name="Total")
+    serie_tiempo["Fecha de desaparición"] = serie_tiempo["Fecha de desaparición"].dt.to_timestamp()
+    
+    plt.figure(figsize=(12, 6))
+    plt.plot(serie_tiempo["Fecha de desaparición"], serie_tiempo["Total"], marker='', linestyle='-', color='b')
+    plt.title("Tendencia Histórica de Desapariciones (Agrupado por Mes)")
+    plt.xlabel("Año y Mes")
+    plt.ylabel("Cantidad de Desapariciones")
+    plt.grid(True)
+    plt.show()
+else:
+    print("La columna 'Fecha de desaparición' no está disponible para analizar.")
+```
+
+#### 2. Clustering (K-Means)
+Agruparemos las entidades federativas (estados) con base en dos características numéricas: la **cantidad total de desapariciones** y la **edad promedio** de los desaparecidos.
+
+```{python}
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+import seaborn as sns
+
+if "Entidad de desaparición" in df_limpio.columns and "Edad" in df_limpio.columns:
+    df_limpio["Edad"] = pd.to_numeric(df_limpio["Edad"], errors="coerce")
+    
+    df_cluster = df_limpio.groupby("Entidad de desaparición").agg({
+        "Edad": "mean",
+        "Consecutivo Registro": "count"
+    }).reset_index()
+    
+    df_cluster.rename(columns={"Consecutivo Registro": "Total_Desapariciones"}, inplace=True)
+    df_cluster.dropna(inplace=True)
+    
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(df_cluster[["Edad", "Total_Desapariciones"]])
+    
+    kmeans = KMeans(n_clusters=4, random_state=42)
+    df_cluster["Cluster"] = kmeans.fit_predict(X_scaled)
+    
+    # Visualizar los clusters
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(data=df_cluster, x="Edad", y="Total_Desapariciones", hue="Cluster", palette="viridis", s=100)
+    
+    plt.title("Clustering de Entidades: Volumen de Desapariciones vs Edad Promedio")
+    plt.xlabel("Edad Promedio")
+    plt.ylabel("Total de Desapariciones")
+    
+    for i, txt in enumerate(df_cluster["Entidad de desaparición"]):
+        if df_cluster["Total_Desapariciones"][i] > df_cluster["Total_Desapariciones"].quantile(0.85): # Solo estados con alto volumen
+            plt.annotate(txt, (df_cluster["Edad"][i], df_cluster["Total_Desapariciones"][i]), fontsize=9)
+            
+    plt.show()
+else:
+    print("Faltan columnas numéricas requeridas para el clustering.")
+```
+
+
+#### 3. Clasificación con Árboles de Decisión
+Este modelo ayuda a identificar reglas que separan a las personas desaparecidas según su sexo, utilizando su Edad y el Estado donde desaparecieron.
+```{python}
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.preprocessing import LabelEncoder
+
+if "Sexo" in df_limpio.columns and "Entidad de desaparición" in df_limpio.columns and "Edad" in df_limpio.columns:
+    df_tree = df_limpio.dropna(subset=["Edad", "Sexo", "Entidad de desaparición"]).copy()
+    
+    df_tree = df_tree[df_tree["Sexo"].isin(["HOMBRE", "MUJER"])]
+    
+    le_sexo = LabelEncoder()
+    df_tree["Sexo_encoded"] = le_sexo.fit_transform(df_tree["Sexo"])
+    
+    le_entidad = LabelEncoder()
+    df_tree["Entidad_encoded"] = le_entidad.fit_transform(df_tree["Entidad de desaparición"])
+    
+    X = df_tree[["Edad", "Entidad_encoded"]]
+    y = df_tree["Sexo_encoded"]
+    
+    clf = DecisionTreeClassifier(max_depth=3, random_state=42, class_weight="balanced")
+    clf.fit(X, y)
+    
+    plt.figure(figsize=(16, 8))
+    plot_tree(clf, 
+              feature_names=["Edad", "Entidad (Codificada)"], 
+              class_names=le_sexo.classes_, 
+              filled=True, 
+              rounded=True, 
+              fontsize=10,
+              proportion=True) # Mostrar en proporciones para mayor legibilidad
+    plt.title("Árbol de Decisión: Reglas del perfil de Desaparición por Sexo")
+    plt.show()
+else:
+    print("Faltan columnas necesarias para ejecutar el Árbol de Decisión.")
+```
+
+
+#### 4. Predicción de Nacionalidad (Random Forest)
+Este modelo evalúa la importancia de variables demográficas y geográficas para predecir si una persona reportada es de origen extranjero o mexicano, ayudando a detectar patrones de migración vulnerada.
+
+```{python}
+from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+
+if "Nacionalidad" in df_limpio.columns and "Entidad de desaparición" in df_limpio.columns:
+    df_rf = df_limpio.dropna(subset=["Edad", "Sexo", "Entidad de desaparición", "Nacionalidad"]).copy()
+    
+    # Binarizamos Nacionalidad: 0 = Mexicana, 1 = Extranjera/Otra
+    es_mexicano = df_rf["Nacionalidad"].str.contains("MEXICAN", case=False, na=False)
+    df_rf["Es_Extranjero"] = np.where(es_mexicano, 0, 1)
+    
+    df_rf = df_rf[df_rf["Sexo"].isin(["HOMBRE", "MUJER"])]
+    
+    le_sexo = LabelEncoder()
+    df_rf["Sexo_encoded"] = le_sexo.fit_transform(df_rf["Sexo"])
+    
+    le_entidad = LabelEncoder()
+    df_rf["Entidad_encoded"] = le_entidad.fit_transform(df_rf["Entidad de desaparición"])
+    
+    X = df_rf[["Edad", "Sexo_encoded", "Entidad_encoded"]]
+    y = df_rf["Es_Extranjero"]
+    
+    # Entrenamiento de Bosque Aleatorio balanceado para manejar grupos minoritarios (extranjeros)
+    rf = RandomForestClassifier(n_estimators=50, max_depth=5, class_weight="balanced", random_state=42)
+    rf.fit(X, y)
+    
+    # Obtenemos la importancia de cada variable (cuál predice mejor el origen)
+    importances = rf.feature_importances_
+    features = ["Edad", "Sexo", "Entidad"]
+    
+    plt.figure(figsize=(8, 5))
+    plt.barh(features, importances, color='teal')
+    plt.title("Importancia de Factores para Predecir Población Extranjera")
+    plt.xlabel("Nivel de Importancia (Importancia de Gini)")
+    plt.show()
+else:
+    print("Faltan columnas necesarias para el modelo de Nacionalidad.")
+```
 
 
 ### Evaluation
 
-Se analizan los resultados considerando posibles sesgos, calidad de los datos y utilidad de los hallazgos.
+Con base en la implementación de los modelos y el EDA previo, se establecen las siguientes conclusiones y observaciones para el cumplimiento de los **Objetivos del Negocio**:
+
+1. **Cumplimiento de las Necesidades de Información:** 
+   * Los diversos modelos (Clustering, Árboles) consiguieron responder activamente "qué entidades corren mayor riesgo" y "cuáles grupos son vulnerables (edad y género)". Las reglas visuales del árbol de decisión ayudan a los tomadores de decisiones a entender demográficamente los riesgos.
+
+2. **Limitaciones por la Calidad de los Datos:**
+   * **Series de Tiempo y Fechas:** El análisis temporal, aunque permite observar picos institucionales de reportes, se encuentra profundamente sesgado. El haber documentado un 80% de datos faltantes bajo un comportamiento `MAR` u ocultamiento `MNAR` indica que los valles en la gráfica de tiempo pueden no representar baja criminalidad, sino ineficiencia burocrática temporal o épocas de no-registro de las autoridades.
+
+3. **Confiabilidad Técnica y Sesgos de Clase:**
+   * **Random Forest (Nacionalidad):** El intento de predecir población extranjera devela un fuerte desequilibrio estructural (imbalance de clases). La evaluación de un modelo sobre estos datos no se puede confiar únicamente en su "Precisión" (Accuracy), ya que el ~98% de personas siempre serán de origen mexicano en los registros. Sin embargo, permite evaluar mediante Importancia de Variables (Feature Importances) que factores como la geografía son sumamente determinantes para extranjeros vulnerados durante flujos migratorios.
+
+En conjunto, el modelado extrajo valor real de los datos disponibles, no obstante, las fallas institucionales en la captura de registros dictan que estas conclusiones representan únicamente los crímenes efectivamente "reconocidos" y capturados, más no el volumen real no reportado, y se deben presentar bajo este contexto ético.
 
 
 
 ### Deployment
 
-Los resultados se presentan mediante un reporte estructurado con visualizaciones que faciliten la interpretación.
+El despliegue (*Deployment*) de este proyecto de Minería de Datos no concluye en la implementación de un software predictivo automatizado tradicional, sino en la **disponibilidad de inteligencia analítica y de datos limpios** para tomadores de decisiones, investigadores y ONGs.
+
+Las acciones de despliegue para este análisis consisten en:
+
+1. **Reporte Técnico y Reproducibilidad:** Integración de todo el flujo de trabajo (desde la carga de datos hasta la Evaluación) en este documento dinámico (`.qmd`). Al compilarse, despliega un reporte HTML o PDF con código reproducible.
+2. **Suministro del Pipeline de Datos (Data Asset):** Exportación y publicación del conjunto de datos ya depurado (`dataset_limpio.csv`), garantizando que equipos externos puedan montar sus propios algoritmos sobre una base con formatos homologados (fechas numéricas, strings estandarizados y nulos declarados bajo la metodología MAR/MNAR).
+3. **Despliegue de Reglas de Decisión (Insights):** Las reglas extraídas en la fase de modelaje (el Árbol de Decisión y la segmentación de K-Means) pueden ser desplegadas como *alertas paramétricas* en sistemas de información del gobierno. Por ejemplo, al recibirse un nuevo reporte en la Fiscalía, el sistema puede alertar automáticamente sobre un riesgo agudo si la persona ingresada cruza los umbrales de alta vulnerabilidad detectados por nuestros modelos demográficos.
 
 
 
@@ -321,20 +497,3 @@ interpretación breve, formal y contextualizada en el caso del dataset de person
 
 **Entregable adicional:** generar el archivo CSV con el dataset limpio.
 
---- 
-
-# Git 
-- Crear un notebook reproducible y subirlo a Git.
-- Crear un environment para la instalación de bibliotecas.
-- Incluir instrucciones de ejecución: las dependencias necesarias y los pasos para ejecutar el proyecto.
-
---- 
-
-# Reporte final: hallazgos y limitaciones
-Entregar un reporte en PDF que incluya:
-- Objetivo y preguntas de análisis
-- Descripción del dataset asignado al equipo
-- Al menos 8 hallazgos principales sustentados con evidencia gráfica o tablas
-- Limitaciones del análisis: calidad de los datos, sesgos, variables faltantes y decisiones
-de limpieza
-- Conclusión.
