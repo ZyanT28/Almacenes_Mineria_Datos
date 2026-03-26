@@ -276,66 +276,88 @@ Finalmente, el poco porcentaje de registros con fecha disponible se pueden utili
 
 - **¿Cómo podemos encontrar registros duplicados?** 
 
-Cada persona tiene un único ID 
+Para encontrar registros duplicados primero necesitamos limpiar el dataset con el siguiente codigo:
 
 ```{python}
 import pandas as pd
 import numpy as np
 
-# 1. Cargar dataset original
+# 1. Cargamos dataset 
 dataset = pd.read_csv("RNPDNO-22-08-2023.csv", encoding="latin-1")
+print("Total de registros iniciales:", len(dataset))
 
-# 2. Reemplazar vacíos por NaN
+# 2. Reemplazamos vacíos por NaN
 dataset = dataset.replace(r'^\s*$', np.nan, regex=True)
 
-# 3. Reemplazar "ELIMINADO" por NaN
+# 3. Reemplazamos "ELIMINADO" por NaN
 dataset = dataset.replace(to_replace="ELIMINADO.*", value=np.nan, regex=True)
 
-# 4. Eliminar filas completamente vacías
-dataset = dataset.dropna(how="all")
+# 4. Eliminamos filas donde todas las columnas relevantes son NaN (registros ELIMINADO)
+columnas_relevantes = [
+    "Nombre", "Primer Apellido", "Segundo Apellido",
+    "Fecha de desaparición", "Entidad de desaparición", "Autoridad que reportó"
+]
+dataset = dataset.dropna(subset=columnas_relevantes, how="all")
 
+# guardamos parte del dataset limpio
+dataset.to_csv("dataset_limpio.csv", index=False)
+
+```
+
+Ahora, para encontrar duplicados utilizamos el sig codigo:
+
+```{python}
+import pandas as pd
+import numpy as np
+
+# 1. Cargamos dataset 
+dataset = pd.read_csv("RNPDNO-22-08-2023.csv", encoding="latin-1")
+
+
+# 5. Convertimos la columna de consecutivo a entero nullable
 dataset["Consecutivo Reportes por Persona"] = dataset["Consecutivo Reportes por Persona"].astype("Int64")
 
-# 5. Buscar duplicados (opcional visualizar)
+# 6. Buscamos si hay duplicados 
 duplicados = dataset[dataset.duplicated(
     subset=[
-        "Nombre", "Primer Apellido", "Segundo Apellido", "Fecha de desaparición"
+        "Nombre", "Primer Apellido", "Segundo Apellido",
+        "Fecha de desaparición", "Entidad de desaparición", "Autoridad que reportó"
     ],
     keep=False
 )]
 
+# print("Ejemplo de registros duplicados:")
+# print(duplicados.head(20))
 print("Duplicados encontrados:", len(duplicados))
 
-# 6. Eliminar duplicados
+# 7. Eliminamos duplicados
 dataset = dataset.drop_duplicates(
     subset=[
-        "Nombre", "Primer Apellido", "Segundo Apellido", "Fecha de desaparición"
-    ]
+        "Nombre", "Primer Apellido", "Segundo Apellido",
+        "Fecha de desaparición", "Entidad de desaparición", "Autoridad que reportó"
+    ],
+    keep="first" 
 )
 
-# 7. Guardar dataset limpio en otro archivo
+# 8. Confirmamos que ya no hay duplicados
+duplicados = dataset[dataset.duplicated(
+    subset=[
+        "Nombre", "Primer Apellido", "Segundo Apellido",
+        "Fecha de desaparición", "Entidad de desaparición", "Autoridad que reportó"
+    ],
+    keep=False
+)]
+print("Nuevos duplicados encontrados:", len(duplicados))
+
+# 9. Guardar dataset limpio
 dataset.to_csv("dataset_limpio.csv", index=False)
-
-
-
+print("Dataset guardado como dataset_limpio.csv")
+print("Total de registros finales:", len(dataset))
 ```
 
 - **¿Qué acciones se tomaron respecto a los registros duplicados y por qué?**
-- **¿Cómo podemos convertir y validar los datos de las fechas a valores numéricos?** 
-- **¿Cómo corregimos las mayúsculas/minúsculas y homologamos etiquetas equivalentes en las categorías?**
 
-
-<!-- # Limpieza del dataset y generación del CSV limpio
-Realizar la limpieza del dataset y documentar claramente lo siguiente:
-
-- Valores faltantes:  qué columnas los presentan, qué porcentaje representan, qué decisión se tomó y por qué.  
-- Duplicados: criterio utilizado para detectarlos y acción tomada.  
-- Tipos de datos correctos: conversión y validación de fechas, valores numéricos y categorías.
-- Normalización de categorías: por ejemplo, corrección de mayúsculas/minúsculas y
-homologación de etiquetas equivalentes.
-- Validaciones: revisión de rangos razonables, fechas imposibles, coordenadas geográficas, en caso de que existan, u otras inconsistencias relevantes. -->
-
-
+Eliminamos únicamente los registros que coincidieran en nombre, apellido paterno, materno, fecha de desaparición, Entidad de desaparición y Autoridad que reportó puesto que el nombre y apellido no son suficiente para eliminar registros duplicados pues esa persona puede tener reportes en diferentes instituciones.  
 
 
 ### Modelling
