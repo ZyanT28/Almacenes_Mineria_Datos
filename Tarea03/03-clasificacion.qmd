@@ -1,0 +1,63 @@
+# Algoritmos: Clasificación
+
+Construye un modelo que prediga una variable objetivo a partir de otras variables del dataset.
+
+**Objetivo:** Predecir `ESTATUS_VICTIMA`.
+
+## Consideraciones
+
+- Utiliza el mismo dataset limpio mencionado en el punto anterior.
+
+- Realiza una división de entrenamiento y prueba (train/test).
+
+- Selecciona adecuadamente las métricas de desempeño a utilizar (por ejemplo accuracy, precision, recall, F1-score) y justifica tu elección.
+
+- Reporta al menos dos métricas de desempeño.
+
+- Analiza qué variables son más relevantes para el modelo.
+
+- Discute si el modelo captura patrones reales o sesgos en los datos.
+
+- En la exposición, deberás explicar por qué elegiste dichas métricas y cómo esta decisión se relaciona con un escenario del mundo real.
+
+En este caso se trató el estatus CONFIDENCIAL como eliminado, al igual que en la sección anterior.
+
+## Selección de métricas
+
+<!-- Pensaba usar f1-score macro, recall macro y precisión. 
+Accuracy no se usaría porque porque en este caso no sería una métrtica confiable por el desvalance de datos que hay :) -->
+
+## División train/test
+
+```{python}
+#| label: train-test-split
+#| code-summary: "División de datos en entrenamiento y prueba"
+
+from sklearn.model_selection import train_test_split
+
+# X = features, y = ESTATUS_VICTIMA
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+```
+
+## Entrenamiento del modelo
+
+```{python}
+#| label: modelo
+#| code-summary: "Entrenamiento del modelo de clasificación"
+
+# Agrega aquí tu modelo
+```
+
+## Resultados
+
+<!-- Agrega aquí las métricas de desempeño obtenidas -->
+
+## Variables más relevantes
+
+<!-- Agrega aquí el análisis de importancia de variables -->
+
+## Discusión: patrones reales vs sesgos
+
+<!-- Discute si el modelo captura patrones reales o sesgos en los datos -->

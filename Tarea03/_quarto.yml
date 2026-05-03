@@ -1,0 +1,52 @@
+project:
+  type: book
+
+book:
+  title: "Minería de Datos — Tarea 03"
+  author: 
+  - "Zianya Nenetzi Trujillo Beltran" 
+  - "José Eduardo Cruz Campos"
+  - "Paola Mildred Martínez Hidalgo"
+  - "Eric "
+  date: today
+  language: es
+  chapters:
+    - index.qmd
+    - 01-apriori.qmd
+    - 02-reglas-asociacion.qmd
+    - 03-clasificacion.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-title: "Contenido"
+    number-sections: true
+    code-fold: true
+    code-tools: true
+    highlight-style: github
+  pdf:
+    documentclass: article
+    papersize: letter
+    number-sections: true
+    toc: true
+    toc-title: "Índice"
+    keep-tex: false
+    include-in-header:
+      text: |
+        \usepackage{amsmath}
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{fancyhdr}
+        \pagestyle{fancy}
+        \lhead{Exposición}
+        \rhead{Pruebas de Software}
+        \cfoot{\thepage}
+
+execute:
+  echo: true
+  eval: false
+  warning: false
+
+lang: es

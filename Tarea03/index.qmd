@@ -1,0 +1,14 @@
+# Portada {.unnumbered}
+
+| | |
+|---|---|
+| **Materia** | Almacenes y Minearía de Datos  |
+| **Tarea** | Tarea 03. Reglas de asociación y clasificación |
+| **Fecha** | Mayo 2026 |
+
+---
+
+Este documento presenta la implementación y análisis de algoritmos de minería de datos aplicados al dataset de desapariciones en México, abordando dos grandes problemas:
+
+1. **Reglas de asociación** — Implementación del algoritmo Apriori y comparación con mlxtend Apriori y FP-Growth.
+2. **Clasificación** — Construcción de un modelo predictivo para `ESTATUS_VICTIMA`.
