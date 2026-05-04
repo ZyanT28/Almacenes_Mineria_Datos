@@ -37,6 +37,7 @@ Se discretizaron las variables numéricas y se incluyeron variables categóricas
 ### Implementación de mlxtend Apriori y FP-Growth
 
 ```{python}
+#| eval: false
 #| label: apriori-mlxtend
 #| code-summary: "Apriori de mlxtend"
 
@@ -55,6 +56,16 @@ def apriori_mlxtend(df_te, min_support, min_confidence):
     rules = association_rules(freq, metric="confidence", min_threshold=min_confidence)
     elapsed = time.time() - t0
     return freq, rules, elapsed
+```
+```{python}
+#| eval: false
+#| label: apriori-FP-growth
+#| code-summary: "Apriori de FP-Growth"
+
+import time
+from mlxtend.frequent_patterns import apriori as mlx_apriori
+from mlxtend.frequent_patterns import fpgrowth
+from mlxtend.frequent_patterns import association_rules
 
 def apriori_fpgrowth(df_te, min_support, min_confidence):
     """
@@ -75,6 +86,7 @@ Se siguieron los siguientes pasos:
 ### Paso 1 — Codificación de transacciones
 
 ```{python}
+#| eval: false
 #| label: encode-transactions
 #| code-summary: "Codificación de transacciones para Apriori propio"
 
@@ -99,6 +111,7 @@ def encode_transactions(df_enc, columns):
 Esta función cambia el formato de cada registro del dataset en una transacción, representándola como un conjunto de ítems. Cada ítem se construye concatenando el nombre de la variable con su valor (por ejemplo, `SEXO=MUJER`), lo que permite generar representaciones atómicas e interpretables para el algoritmo. Esto es necesario porque Apriori trabaja con conjuntos de ítems categóricos.
 
 ```{python}
+#| eval: false
 #| label: transactions-to-df
 #| code-summary: "Conversión a DataFrame booleano para mlxtend y FP-Growth"
 
@@ -147,6 +160,7 @@ De cada itemset frecuente de tamaño $\geq 2$, se generan todas las particiones 
 : Métricas de asociación {tbl-colwidths="[10,40,50]"}
 
 ```{python}
+#| eval: false
 #| label: metricas
 #| code-summary: "Funciones de cálculo de métricas (Apriori propio)"
 
@@ -170,6 +184,7 @@ def get_lift(confidence, sup_cons):
 Se aplica un filtro adicional con $\text{lift} > 1.2$ y $\text{confidence} > 0.4$ para mantener únicamente patrones con una relación estadísticamente fuerte.
 
 ```{python}
+#| eval: false
 #| label: filtro-reglas
 #| code-summary: "Filtro de reglas interesantes"
 
@@ -363,3 +378,333 @@ Del análisis por sexenio emergen tres patrones transversales:
 - **Dominio de estatus DESAPARECIDA:** El estatus de desaparecido representa el 94.6% de los registros válidos. Las reglas que incluyen este consecuente tienen soporte y confianza altos simplemente porque es el valor mayoritario, no necesariamente porque exista una asociación real. El lift corrige parcialmente esto, por lo que las reglas con $\text{lift} > 1.2$ son las que realmente aportan información.
 
 - **Cobertura desigual por sexenio:** Fox tiene apenas 600 registros mientras que AMLO tiene 24 632. Hay diferentes razones: en el sexenio de Fox no existía la tecnología actual y podrían haberse perdido registros, o realmente hubo mayor número de desapariciones durante el sexenio de AMLO. Por lo tanto, las comparaciones entre sexenios deben hacerse con reservas.
+
+
+## Código completo:
+```{python}
+import pandas as pd
+import numpy as np
+import time
+import warnings
+from itertools import combinations
+from collections import defaultdict
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import apriori as mlx_apriori
+from mlxtend.frequent_patterns import fpgrowth, association_rules
+
+
+
+warnings.filterwarnings("ignore")
+
+# ──────────────────────────────────────────────────────────────
+# Algoritmos implementados
+# ──────────────────────────────────────────────────────────────
+
+def apriori_propio(transactions, min_support, min_confidence):
+    """
+    Implementación propia del algoritmo Apriori.
+    Retorna (frequent_itemsets_dict, rules_list)
+    """
+    n = len(transactions)
+    all_items = set(item for t in transactions for item in t)
+
+    # Itemsets frecuentes de tamaño 1
+    freq = {}
+    L1 = {}
+    for item in all_items:
+        sup = get_support(frozenset([item]), transactions, n)
+        if sup >= min_support:
+            L1[frozenset([item])] = sup
+    freq.update(L1)
+
+    Lk = L1
+    k = 2
+    while Lk:
+        prev_keys = list(Lk.keys())
+        candidates = set()
+        for i in range(len(prev_keys)):
+            for j in range(i + 1, len(prev_keys)):
+                union = prev_keys[i] | prev_keys[j]
+                if len(union) == k:
+                    candidates.add(union)
+
+        Lk_new = {}
+        for c in candidates:
+            subsets_freq = all(
+                frozenset(sub) in Lk
+                for sub in combinations(c, k - 1)
+            )
+            if not subsets_freq:
+                continue
+            sup = get_support(c, transactions, n)
+            if sup >= min_support:
+                Lk_new[c] = sup
+
+        freq.update(Lk_new)
+        Lk = Lk_new
+        k += 1
+
+    # Generar reglas
+    rules = []
+    for itemset, sup_itemset in freq.items():
+        if len(itemset) < 2:
+            continue
+        for size in range(1, len(itemset)):
+            for antecedent in combinations(itemset, size):
+                antecedent = frozenset(antecedent)
+                consequent = itemset - antecedent
+                sup_ant = freq.get(antecedent, get_support(antecedent, transactions, n))
+                if sup_ant == 0:
+                    continue
+                confidence = get_confidence(sup_itemset, sup_ant) # calculamos confidence
+                sup_cons = freq.get(consequent, get_support(consequent, transactions, n))
+                lift = get_lift(confidence, sup_cons) # calculamos lift
+                if confidence >= min_confidence:
+                    rules.append({
+                        "antecedents": antecedent,
+                        "consequents": consequent,
+                        "support":     round(sup_itemset, 4),
+                        "confidence":  round(confidence, 4),
+                        "lift":        round(lift, 4)
+                    })
+    return freq, rules
+
+
+def apriori_mlxtend(df_te, min_support, min_confidence):
+    """
+    Apriori de mlxtend.
+    Retorna (freq_itemsets, rules_df, elapsed_seconds)
+    """
+    t0 = time.time()
+    freq = mlx_apriori(df_te, min_support, use_colnames=True)
+    rules = association_rules(freq, metric="confidence", min_threshold=min_confidence)
+    elapsed = time.time() - t0
+    return freq, rules, elapsed
+
+
+def apriori_fpgrowth(df_te, min_support, min_confidence):
+    """
+    FP-Growth de mlxtend.
+    Retorna (freq_itemsets, rules_df, elapsed_seconds)
+    """
+    t0 = time.time()
+    freq = fpgrowth(df_te, min_support, use_colnames=True)
+    rules = association_rules(freq, metric="confidence", min_threshold=min_confidence)
+    elapsed = time.time() - t0
+    return freq, rules, elapsed
+
+
+# ──────────────────────────────────────────────────────────────
+# Codificación de transacciones
+# ──────────────────────────────────────────────────────────────
+def encode_transactions(df_enc, columns):
+    """Transforma los valores del dataset a la forma {col}={val}, como SEXO=mujer, lo utiliza Apriori propio"""
+    transactions = []
+    for _, row in df_enc.iterrows():
+        items = set()
+        for col in columns:
+            val = row[col]
+            if pd.notna(val) and str(val).strip() not in ("", "nan"):
+                items.add(f"{col}={val}")
+        transactions.append(frozenset(items))
+    return transactions
+
+def transactions_to_df(transactions):
+    """Convierte lista de frozensets al DataFrame booleano que requiere mlxtend y fp-growth"""
+    te = TransactionEncoder()
+    te_array = te.fit_transform([list(t) for t in transactions])
+    return pd.DataFrame(te_array, columns=te.columns_)
+
+
+# ──────────────────────────────────────────────────────────────
+#  Calculamos Support, confidence, lift
+# ──────────────────────────────────────────────────────────────
+
+def get_support(itemset, transactions, n):
+    count = sum(1 for t in transactions if itemset.issubset(t))
+    return count / n
+
+def get_confidence(sup_itemset, sup_ant):
+    return sup_itemset / sup_ant if sup_ant > 0 else 0
+
+def get_lift(confidence, sup_cons):
+    return confidence / sup_cons if sup_cons > 0 else 0
+
+
+
+# ──────────────────────────────────────────────────────────────
+# 0. CARGA Y PREPROCESAMIENTO
+# ──────────────────────────────────────────────────────────────
+print("=" * 65)
+print("0. CARGA Y PREPROCESAMIENTO")
+print("=" * 65)
+
+df_raw = pd.read_csv("data_secretariado.csv")
+print(f"Registros originales : {len(df_raw):,}")
+print(f"Columnas             : {list(df_raw.columns)}\n")
+
+CONF = "CONFIDENCIAL"
+
+# Filtrar CONFIDENCIAL para reglas de asociación
+df = df_raw[df_raw["SEXO"] != CONF].copy()
+df = df[df["FECHA_DESAPARICION"] != CONF].copy()
+df = df[df["FECHA_NACIMIENTO"] != CONF].copy()
+df = df[df["ESTATUS_VICTIMA"] != CONF].copy()
+print(f"Registros tras filtrar CONFIDENCIAL: {len(df):,}")
+
+df["FECHA_NACIMIENTO"]   = pd.to_datetime(df["FECHA_NACIMIENTO"],   errors="coerce")
+df["FECHA_DESAPARICION"] = pd.to_datetime(df["FECHA_DESAPARICION"], errors="coerce")
+df.dropna(subset=["FECHA_NACIMIENTO", "FECHA_DESAPARICION"], inplace=True)
+
+df["EDAD"] = (df["FECHA_DESAPARICION"] - df["FECHA_NACIMIENTO"]).dt.days // 365
+df = df[(df["EDAD"] >= 0) & (df["EDAD"] <= 110)]
+print(f"Registros tras filtrar edades inválidas: {len(df):,}\n")
+
+bins_edad = [0, 11, 17, 29, 59, 110]
+labs_edad = ["0-11", "12-17", "18-29", "30-59", "60+"]
+df["GRUPO_EDAD"] = pd.cut(df["EDAD"], bins=bins_edad, labels=labs_edad, right=True)
+df["MES_DESAPARICION"] = df["FECHA_DESAPARICION"].dt.month.map(
+    {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+     7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
+)
+df["SEXO"] = df["SEXO"].str.strip()
+df.drop_duplicates(subset="ID_VICTIMA", inplace=True)
+print(f"Registros finales para asociación: {len(df):,}\n")
+
+for col in ["SEXO", "GRUPO_EDAD", "ESTATUS_VICTIMA"]:
+    print(f"  {col}:\n{df[col].value_counts().to_string()}\n")
+
+# Segmentación temporal por sexenio
+def asignar_sexenio(fecha):
+    y = fecha.year
+    if y <= 2006:   return "Fox (2000-2006)"
+    elif y <= 2012: return "Calderon (2006-2012)"
+    elif y <= 2018: return "PeñaNieto (2012-2018)"
+    elif y <= 2024: return "AMLO (2018-2024)"
+    else:           return "Sheinbaum (2024-)"
+
+df["SEXENIO"] = df["FECHA_DESAPARICION"].apply(asignar_sexenio)
+print("Distribución por sexenio:")
+print(df["SEXENIO"].value_counts().sort_index().to_string(), "\n")
+
+
+# ──────────────────────────────────────────────────────────────
+# 1 y 2. REGLAS DE ASOCIACIÓN — 3 algoritmos por sexenio
+# ──────────────────────────────────────────────────────────────
+print("=" * 65)
+print("REGLAS DE ASOCIACIÓN POR SEXENIO — Apriori propio, mlxtend Apriori y FP-Growth")
+print("=" * 65)
+
+MIN_SUPPORT    = 0.04
+MIN_CONFIDENCE = 0.4
+cols_assoc     = ["SEXO", "GRUPO_EDAD", "ENTIDAD", "MES_DESAPARICION", "ESTATUS_VICTIMA"]
+
+ORDEN_SEXENIOS = [
+    "Fox (2000-2006)",
+    "Calderon (2006-2012)",
+    "PeñaNieto (2012-2018)",
+    "AMLO (2018-2024)",
+    "Sheinbaum (2024-)",
+]
+
+def _print_top5(rules_df, label):
+    print(f"  Top-5 reglas ({label}) por lift:")
+    top = rules_df.sort_values("lift", ascending=False).head(5)
+    for _, r in top.iterrows():
+        ant = ", ".join(sorted(r["antecedents"]))
+        con = ", ".join(sorted(r["consequents"]))
+        print(f"    [{ant}]")
+        print(f"    → [{con}]")
+        print(f"      sup={r['support']:.3f}  conf={r['confidence']:.3f}  lift={r['lift']:.3f}")
+
+resumen_tiempos = []
+
+for sexenio in ORDEN_SEXENIOS:
+    df_seg = df[df["SEXENIO"] == sexenio]
+    if len(df_seg) < 500:
+        print(f"\n  [Saltando {sexenio}: solo {len(df_seg)} registros]\n")
+        continue
+
+    print(f"\n{'=' * 65}")
+    print(f"  SEXENIO: {sexenio}  ({len(df_seg):,} registros)")
+    print(f"{'=' * 65}")
+
+    df_assoc = df_seg[cols_assoc].dropna().copy()
+    transactions = encode_transactions(df_assoc, cols_assoc)
+    df_te = transactions_to_df(transactions)
+
+    print(f"  Transacciones usadas: {len(transactions):,}")
+    print(f"  Parámetros → min_support={MIN_SUPPORT}, min_confidence={MIN_CONFIDENCE}\n")
+
+    # Apriori propio
+    print("  [Apriori propio] Ejecutando...")
+    t0 = time.time()
+    freq_propio, rules_propio = apriori_propio(transactions, MIN_SUPPORT, MIN_CONFIDENCE)
+    t_propio = time.time() - t0
+    print(f"    Tiempo: {t_propio:.2f} s  |  Itemsets: {len(freq_propio)}  |  Reglas: {len(rules_propio)}")
+    if rules_propio:
+        rules_propio_df = pd.DataFrame(rules_propio).sort_values("lift", ascending=False)
+        _print_top5(rules_propio_df, "Apriori propio")
+
+    # mlxtend Apriori
+    print("\n  [mlxtend Apriori] Ejecutando...")
+    freq_mlx, rules_mlx, t_mlx = apriori_mlxtend(df_te, MIN_SUPPORT, MIN_CONFIDENCE)
+    print(f"    Tiempo: {t_mlx:.2f} s  |  Itemsets: {len(freq_mlx)}  |  Reglas: {len(rules_mlx)}")
+    if len(rules_mlx) > 0:
+        _print_top5(rules_mlx, "mlxtend Apriori")
+
+    # FP-Growth
+    print("\n  [FP-Growth] Ejecutando...")
+    freq_fp, rules_fp, t_fp = apriori_fpgrowth(df_te, MIN_SUPPORT, MIN_CONFIDENCE)
+    print(f"    Tiempo: {t_fp:.2f} s  |  Itemsets: {len(freq_fp)}  |  Reglas: {len(rules_fp)}")
+    if len(rules_fp) > 0:
+        _print_top5(rules_fp, "FP-Growth")
+
+    # Reglas interesantes (lift > 1.2, conf > 0.4)
+    if len(rules_fp) > 0:
+        mask = (rules_fp["lift"] > 1.2) & (rules_fp["confidence"] > 0.4)
+        interesting = rules_fp[mask].sort_values("lift", ascending=False)
+        print(f"\n  ─── Reglas interesantes (lift>1.2, conf>0.4): {len(interesting)} ───")
+        for _, r in interesting.head(5).iterrows():
+            ant = ", ".join(sorted(r["antecedents"]))
+            con = ", ".join(sorted(r["consequents"]))
+            print(f"    [{ant}] → [{con}]")
+            print(f"      sup={r['support']:.3f}  conf={r['confidence']:.3f}  lift={r['lift']:.3f}")
+
+    print(f"\n  ─── Comparativa de tiempos ({sexenio}) ───")
+    print(f"    Apriori propio  : {t_propio:.2f} s")
+    print(f"    mlxtend Apriori : {t_mlx:.2f} s")
+    print(f"    FP-Growth       : {t_fp:.2f} s")
+
+    resumen_tiempos.append({
+        "sexenio": sexenio, "registros": len(df_assoc),
+        "t_propio": t_propio, "t_mlx": t_mlx, "t_fp": t_fp,
+        "reglas_propio": len(rules_propio),
+        "reglas_mlx": len(rules_mlx), "reglas_fp": len(rules_fp),
+    })
+
+print("\n" + "=" * 65)
+print("RESUMEN COMPARATIVO DE TIEMPOS POR SEXENIO")
+print("=" * 65)
+resumen_df = pd.DataFrame(resumen_tiempos)
+print(resumen_df.to_string(index=False))
+
+# variable dummy para que el bloque de RESUMEN FINAL no falle
+# (toma los tiempos del último sexenio procesado)
+if resumen_tiempos:
+    t_propio = resumen_tiempos[-1]["t_propio"]
+    t_mlx    = resumen_tiempos[-1]["t_mlx"]
+    t_fp     = resumen_tiempos[-1]["t_fp"]
+
+
+print("\n" + "=" * 65)
+print("RESUMEN FINAL")
+print("=" * 65)
+print(f"\nTiempos algoritmos Apriori:")
+print(f"  Apriori propio  : {t_propio:.2f} s  (O(2^n) candidatos, el mas lento)")
+print(f"  mlxtend Apriori : {t_mlx:.2f} s")
+print(f"  FP-Growth       : {t_fp:.2f} s  (sin generación de candidatos, el más rápido)")
+
+
+```
+

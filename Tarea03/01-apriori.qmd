@@ -7,6 +7,7 @@ Implementación del algoritmo Apriori en Python.
 Las siguientes funciones de soporte calculan las métricas fundamentales utilizadas por el algoritmo Apriori propio.
 
 ```{python}
+
 #| label: funciones-auxiliares
 #| code-summary: "Funciones de soporte (support, confidence, lift)"
 
@@ -21,13 +22,28 @@ def get_confidence(sup_itemset, sup_ant):
 
 def get_lift(confidence, sup_cons):
     return confidence / sup_cons if sup_cons > 0 else 0
+
 ```
 
 ## Implementación de Apriori propio
 
 ```{python}
-#| label: apriori-propio
-#| code-summary: "Algoritmo Apriori implementado desde cero"
+
+#| label: funciones-auxiliares-01
+#| code-summary: "Funciones de soporte (support, confidence, lift)"
+
+from itertools import combinations
+
+def get_support(itemset, transactions, n):
+    count = sum(1 for t in transactions if itemset.issubset(t))
+    return count / n
+
+def get_confidence(sup_itemset, sup_ant):
+    return sup_itemset / sup_ant if sup_ant > 0 else 0
+
+def get_lift(confidence, sup_cons):
+    return confidence / sup_cons if sup_cons > 0 else 0
+
 
 def apriori_propio(transactions, min_support, min_confidence):
     """

@@ -27,7 +27,7 @@ format:
     code-tools: true
     highlight-style: github
   pdf:
-    documentclass: article
+    documentclass: report
     papersize: letter
     number-sections: true
     toc: true

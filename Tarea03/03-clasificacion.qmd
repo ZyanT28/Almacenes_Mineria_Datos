@@ -17,7 +17,7 @@ Se parte del mismo dataset limpio usado en la sección anterior, aplicando las m
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv("data/data_secretariado.csv")
+df = pd.read_csv("data_secretariado.csv")
 
 # Eliminar registros con CONFIDENCIAL en columnas clave
 cols_clave = ["SEXO", "ESTATUS_VICTIMA", "ENTIDAD",
@@ -230,7 +230,7 @@ for ax, (nombre, modelo) in zip(axes, [("Árbol de Decisión", dt),
     ax.set_xlabel("Importancia")
 
 plt.tight_layout()
-plt.savefig("images/importancia_variables.png", dpi=150, bbox_inches="tight")
+#plt.savefig("images/importancia_variables.png", dpi=150, bbox_inches="tight")
 plt.show()
 ```
 
