@@ -46,7 +46,7 @@ format:
 
 execute:
   echo: true
-  eval: false
+  eval: true
   warning: false
 
 lang: es
